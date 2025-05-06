@@ -1,0 +1,149 @@
+service: lambda-template-serverless
+frameworkVersion: "3"
+
+plugins:
+  localPath: ".serverless_plugins"
+  modules:
+    - serverless-python-requirements
+    - serverless-offline
+
+custom:
+  serverless-offline:
+    httpPort: 3000
+    timeout: 20
+  pythonRequirements:
+    dockerizePip: false
+    pythonBin: python3
+
+provider:
+  name: aws
+  runtime: python3.12
+  timeout: 30
+  lambdaHashingVersion: 20201221
+  versionFunctions: false
+  region: ${opt:region, 'eu-central-1'}
+  tracing:
+    lambda: true
+  deploymentBucket:
+    name: !Ref PackageArtifactsName
+  environment:
+    ${file(./function/environment.yml)}
+  iamRoleStatements:
+    - Effect: Allow
+      Sid: AllowGetSsm
+      Action:
+        - ssm:GetParameters
+        - ssm:GetParameter
+      Resource:
+        - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/*
+    - Effect: Allow
+      Sid: AllowSm
+      Action:
+        - secretsmanager:GetSecretValue
+        - secretsmanager:DescribeSecret
+      Resource:
+        - !Sub arn:aws:secretsmanager:${AWS::Region}:*:secret:*
+    - Effect: Allow
+      Sid: AllowInvokeLambda
+      Action:
+        - lambda:InvokeFunction
+        - lambda:InvokeAsync
+      Resource:
+        - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:lambda-handler-*
+    - Effect: Allow
+      Sid: AllowKms
+      Action:
+        - kms:DescribeKey
+        - kms:Encrypt
+        - kms:Decrypt
+        - kms:ReEncrypt
+      Resource:
+        - !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*
+    - Effect: Allow
+      Sid: DynamoDBTableAllow
+      Action:
+        - dynamodb:Get*
+        - dynamodb:Query
+        - dynamodb:Update*
+        - dynamodb:BatchWriteItem
+        - dynamodb:DescribeStream
+        - dynamodb:ListStreams
+        - dynamodb:PutItem
+        - dynamodb:Scan
+        - dynamodb:Delete*
+        - dynamodb:BatchGet*
+      Resource:
+        - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/test-table
+        - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/test-table/*
+package:
+  individually: true
+  patterns:
+    - "!node_modules"
+    - "!.serverless/requirements"
+    - "!${opt:package, '.serverless'}"
+    - "!configs"
+    - "!*.yml*"
+    - "!*.json"
+    - "!*.sh"
+    - "!**/__pycache__/**"
+    - "lib"
+    - "*.py"
+  excludeDevDependencies: true
+
+functions:
+  awf:
+    name: lambda-handler
+    handler: src/index.app_handler
+    tracing: !Ref Tracing
+    events:
+    - http:
+        path: /dk-test-configs/{name}
+        method: GET
+        integration: lambda-proxy
+        cors:
+          origin: "*"
+          headers:
+            - Authorization
+            - Content-Type
+            - X-Amz-Date
+            - X-Api-Key
+            - X-Amz-Security-Token
+            - X-Amz-User-Agent
+            - X-Amzn-Trace-Id
+            - X-Channel
+            - X-Tenant
+          allowCredentials: false
+    - http:
+        path: /dk-test-mutations
+        method: POST
+        integration: lambda-proxy
+        cors:
+          origin: "*"
+          headers:
+            - Authorization
+            - Content-Type
+            - X-Amz-Date
+            - X-Api-Key
+            - X-Amz-Security-Token
+            - X-Amz-User-Agent
+            - X-Amzn-Trace-Id
+            - X-Channel
+            - X-Tenant
+          allowCredentials: false
+    - http:
+        path: /test2-mutations
+        method: POST
+        integration: lambda-proxy
+        cors:
+          origin: "*"
+          headers:
+            - Authorization
+            - Content-Type
+            - X-Amz-Date
+            - X-Api-Key
+            - X-Amz-Security-Token
+            - X-Amz-User-Agent
+            - X-Amzn-Trace-Id
+            - X-Channel
+            - X-Tenant
+          allowCredentials: false

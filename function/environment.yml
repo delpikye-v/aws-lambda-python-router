@@ -1,0 +1,2 @@
+STAGE: !Ref Stage
+DEFAULT_REGION: !Ref AwsDefaultRegion

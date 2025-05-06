@@ -1,0 +1,24 @@
+{
+  "name": "lambda-template-serverless",
+  "version": "1.0",
+  "description": "Lambda Serverless",
+  "author": "Delpi.Kye",
+  "scripts": {
+    "postinstall": "patch-package",
+    "start": "serverless offline",
+    "dev": "serverless offline start --reloadHandler",
+    "build": "serverless package",
+    "test": "pytest",
+    "test:coverage": "pytest --cov=src --cov-report term-missing:skip-covered",
+    "test-html": "pytest --cov=src --cov-report term-missing --cov-report html"
+  },
+  "dependencies": {
+    "serverless": "^3.40.0",
+    "serverless-plugin-datadog": "^5.76.0",
+    "serverless-python-requirements": "^6.1.1"
+  },
+  "devDependencies": {
+    "patch-package": "^8.0.0",
+    "serverless-offline": "^13.9.0"
+  }
+}
